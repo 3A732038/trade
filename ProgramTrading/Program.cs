@@ -24,7 +24,7 @@ namespace ProgramTrading
                 Console.ReadKey();
             }
         }
-        //123
+        //456
         private static void init()
         {
             //建立API執行個體
