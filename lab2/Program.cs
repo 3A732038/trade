@@ -1,17 +1,20 @@
 ﻿using MrWangAPI;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Lab1
+namespace Lab2
 {
-
     class Program
     {
+        static Logger logger = LogManager.GetCurrentClassLogger();
         static MrWangConnection MrWangConnection;
         static void Main(string[] args)
         {
+            //123//456//789
             //初始化API元件
             init();
             //執行連線
@@ -77,8 +80,20 @@ namespace Lab1
             {
                 //登入成功
                 Console.WriteLine("登入成功。");
-                Console.WriteLine("訂閱商品TXD9。");
-                MrWangConnection.SubscribeQuote("TXFD9", 5);
+                Console.WriteLine("訂閱商品TXFD9。");
+                //地4步 訂閱報價
+                MrWangConnection.SubscribeQuote("TXFD9");
+                //產生下單物件
+                Order order = new Order();
+                {
+                    order.Symbol = "TXFD9";
+                    order.Side = SideEnum.Buy;
+                    order.Price = 10700;
+                    order.Qty = 1;
+                    order.OrderType = OrderTypeEnum.otLimit;
+                    order.TimeInForce = TimeInForceEnum.IOC;
+                };
+                MrWangConnection.SnedOrder(order);
             }
             else
             {
@@ -100,7 +115,9 @@ namespace Lab1
         /// </summary>
         private static void MrWangConnection_OnTradingReply(Reply reply)
         {
-
+            Console.WriteLine($"Status:{reply.OrderStatus} {reply.Side} " +
+                              $"{reply.Qty} {reply.Symbol} @ {reply.Price} " +
+                              $"{reply.orderType} {reply.TimeInForce}");
         }
 
         /// <summary>
@@ -108,28 +125,25 @@ namespace Lab1
         /// </summary>
         private static void MrWangConnection_OnOrderBookData(OrderBook orderBook)
         {
-
+            Console.WriteLine($"Symbol:{orderBook.Symbol}" +
+                $" Bid:{orderBook.BidPrice} x {orderBook.BidQty}" +
+                $" Ask:{orderBook.AskPrice} x {orderBook.AskQty}");
         }
 
         /// <summary>
         /// 通知成交價
         /// </summary>
-        static double high;
-        static double low;
         private static void MrWangConnection_OnMatchInfo(Match match)
         {
-            if (high == 0)
-                high = match.MatchPrice;
-            else if (high < match.MatchPrice)
-                high = match.MatchPrice;
-            if (low == 0)
-                low = match.MatchPrice;
-            else if (low > match.MatchPrice)
-                low = match.MatchPrice;
-            Console.WriteLine($"Symbol:{match.Symbol}" +
-                   $" Last:{match.MatchPrice} x {match.MatchQty}" +
-                   $" Volume:{match.Volume} High:{high} Low:{low}");
+            //Console.WriteLine($"Symbol:{match.Symbol}" +
+            //    $" Last:{match.MatchPrice} x {match.MatchQty}" +
+            //    $" Volume:{match.Volume}");
 
+
+            logger.Info($"Symbol:{match.Symbol}" +
+                $" Last:{match.MatchPrice} x {match.MatchQty}" +
+                $" Volume:{match.Volume}");
         }
     }
+
 }
